@@ -233,3 +233,20 @@ colnames(monthly.xts)
 difflog_monthly.xts <- monthly.xts[,c(16:30)]
 reg_monthly_a <- lm(difflog_monthly.xts$Y_DiffLog ~ ., difflog_monthly.xts)
 summary(reg_monthly_a)
+
+####  Breusch-Pagan test ####
+lmtest::bptest(reg1a)
+
+#### Box-cox Transformation ####
+distBCMod <- caret::BoxCoxTrans(data$Y_DiffLog)
+print(distBCMod)
+
+data <- cbind(data, dist_new=predict(distBCMod, data$Y_DiffLog))
+head(data)
+
+lmMod_bc <- lm(data$dist_new ~ data$S5UTIL_DiffLog + data$S5CONS_DiffLog + data$S5COND_dIFFLog + 
+                 data$UnemploymentRate_DiffLog + data$GoldPrice_DiffLog, data = data[,17:31])
+bptest(lmMod_bc)
+
+plot(lmMod_bc)
+
