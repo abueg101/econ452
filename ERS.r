@@ -87,7 +87,13 @@ FederalDebt.365 <- na.locf(merge(FederalDebt.xts, foo=zoo(NA, order.by=seq(start
 # I could not left join these data with daily data by 'date', so I ended up exporting the CSV, added the dates and 
 # merged all variables with vlookup function in Excel, and read it in again.
 
-xts.df <- data.frame(merge(MortgageRate.365,unemployment.365, join='left') %>% 
+xts.df <- data.frame(merge(y.xts,S5UTIL.xts, join='left') %>% 
+                       merge(.,S5CONS.xts,join ='left') %>%
+                       merge(.,S5COND.ts,join ='left') %>%
+                       merge(.,Gold.xts,join ='left') %>%
+                       merge(.,TreasuryBill.xts,join ='left') %>%
+                       merge(.,MortgageRate.365,join ='left') %>%
+                       merge(.,unemployment.365,join ='left') %>%
                        merge(.,PPI.petroleum.365,join ='left') %>%
                        merge(.,PPI.Lumber.365,join ='left') %>%
                        merge(.,PPI.Tranportation.365,join ='left') %>%
@@ -95,7 +101,6 @@ xts.df <- data.frame(merge(MortgageRate.365,unemployment.365, join='left') %>%
                        merge(.,Gov_Bond.365,join ='left') %>% 
                        merge(.,CPI.365,join ='left') %>% 
                        merge(.,FederalDebt.365,join ='left'))
-                      
 
 #This could be downloaded from my Github page
 #write.csv(xts.df,"C:/Users/6o8an/OneDrive/Documents/ECON452/ers/xts.csv", row.names = FALSE)
@@ -175,3 +180,56 @@ reg1b <- lm(data$Y_DiffLog ~ data$UnemploymentRate_DiffLog + data$GoldPrice_Diff
 summary(reg1b)
 # -------------------------------------------------------------------------------------------
 
+library(xts)
+
+data_diff_log <- data[,c(17:31)]
+
+monthly.xts <- apply.monthly(xts.df, mean)
+
+## all monthly data
+
+monthdata_no_S5COND <- monthly.xts[,-c(4)]
+for(i in 2:ncol(monthdata_no_S5COND)){
+  print(colnames(monthdata_no_S5COND[i]))
+  TS = ts(monthdata_no_S5COND[,i], start = c(2000,1),frequency = 252.75)
+  print(adf.test(TS))
+}
+
+## Adf test of loged variables
+for(i in 2:ncol(monthdata_no_S5COND)){
+  print(colnames(monthdata_no_S5COND[i]))
+  TS_Log = ts(log(monthdata_no_S5COND[,i]), start = c(2000,1),frequency = 252.75)
+  print(adf.test(TS_Log))
+}
+
+## Adf test of diff of log
+for(i in 2:ncol(monthdata_no_S5COND)){
+  print(colnames(monthdata_no_S5COND[i]))
+  TS_LogDiff = ts(diff(log(monthdata_no_S5COND[,i])), start = c(2000,1),frequency = 252.75)
+  print(adf.test(TS_LogDiff))
+}
+
+## Diff of Log
+monthly.xts$y.xts
+monthly.xts$Y_DiffLog <- c(0,diff(log(monthly.xts$y.xts)))
+monthly.xts$S5UTIL_DiffLog <- c(0,diff(log(monthly.xts$S5UTIL.xts)))
+monthly.xts$S5CONS_DiffLog <- c(0,diff(log(monthly.xts$S5CONS.xts)))
+monthly.xts$S5COND_dIFFLog <- c(0,diff(log(monthly.xts$S5COND.ts)))
+monthly.xts$GoldPrice_DiffLog <- c(0,diff(log(monthly.xts$Gold.xts)))
+monthly.xts$TreasuryBill3m_DiffLog <- c(0,diff(log(monthly.xts$TreasuryBill.xts)))
+monthly.xts$MortgageRate30y_DiffLog <- c(0,diff(log(monthly.xts$MortgageRate.xts)))
+monthly.xts$UnemploymentRate_DiffLog <- c(0,diff(log(monthly.xts$unemployment.xts)))
+monthly.xts$PPI.Petroleum_DiffLog <- c(0,diff(log(monthly.xts$PPI.petroleum.xts)))
+monthly.xts$PPI.Lumber_DiffLog <- c(0,diff(log(monthly.xts$PPI.Lumber.xts)))
+monthly.xts$PPI.Machinery_DiffLog <- c(0,diff(log(monthly.xts$PPI.Machinery.xts)))
+monthly.xts$PPI.Tranportation_DiffLog <- c(0,diff(log(monthly.xts$PPI.Tranportation.xts)))
+monthly.xts$GovernmentBond_DiffLog <- c(0,diff(log(monthly.xts$Gov_Bond.xts)))
+monthly.xts$CPI_DiffLog <- c(0,diff(log(monthly.xts$CPI.xts)))
+monthly.xts$FederalDebt_DiffLog <- c(0,diff(log(monthly.xts$FederalDebt.xts)))
+
+
+View(monthly.xts)
+colnames(monthly.xts)
+difflog_monthly.xts <- monthly.xts[,c(16:30)]
+reg_monthly_a <- lm(difflog_monthly.xts$Y_DiffLog ~ ., difflog_monthly.xts)
+summary(reg_monthly_a)
